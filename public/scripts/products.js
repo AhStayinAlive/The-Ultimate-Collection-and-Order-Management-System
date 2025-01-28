@@ -1,4 +1,17 @@
 $(document).ready(function() {
+    let currentProductIndex = 0;
+    let salesChart, profitChart;
+
+    // Function to destroy existing charts
+    function destroyCharts() {
+        if (salesChart) {
+            salesChart.destroy();
+        }
+        if (profitChart) {
+            profitChart.destroy();
+        }
+    }
+
     // Pop up 
     $(".three-dots-product-option").click(popupClick);
 
@@ -135,7 +148,9 @@ $(document).ready(function() {
                 var salesChartCtx = document.getElementById('salesChart').getContext('2d');
                 var profitChartCtx = document.getElementById('profitChart').getContext('2d');
 
-                new Chart(salesChartCtx, {
+                destroyCharts(); // Destroy existing charts
+
+                salesChart = new Chart(salesChartCtx, {
                     type: 'line',
                     data: {
                         labels: salesDates,
@@ -155,7 +170,7 @@ $(document).ready(function() {
                     }
                 });
 
-                new Chart(profitChartCtx, {
+                profitChart = new Chart(profitChartCtx, {
                     type: 'line',
                     data: {
                         labels: profitDates,
@@ -220,58 +235,81 @@ $(document).ready(function() {
         });
     }
     
-    // Function to show product details
-    function viewProduct(){
-        var container = $(this).closest('.container');
-        var productId = container.data('id');
-        var productName = container.data('name');
-        var productPrice = container.data('price');
-        var productSKU = container.data('sku');
-        var productMaterials = container.data('materials');
-        var productPicture = container.data('picture');
-
-        // Set product details in the modal
-        $("#dynamic-product-name").text(productName);
-        $("#product-name").text(productName);
-        $("#product-price").text(productPrice);
-        $("#product-sku").text(productSKU);
-        $("#product-material").text(productMaterials);
-        $(".product-img").attr("src", productPicture);
+    function fetchAndUpdateProductDetails(productId, productPicture) {
+        console.log(`Updating product details for product ID: ${productId}`);
         fetchViewProductInfo(productId);
         fetchViewProductMetrics(productId);
         fetchProductGraphs(productId);
         fetchViewProductDetails(productId);
 
-        // Show the modal and default to the first section
+        // Set the product image
+        console.log(`Product Image: ${productPicture}`);
+        $(".product-img").attr("src", productPicture);
+    }
+
+    function viewProduct(index) {
+        console.log(`Viewing product at index: ${index}`);
+        currentProductIndex = index;
+        const container = $('.product-pic').eq(index).closest('.container');
+        const productId = container.data('id');
+        const productPicture = container.data('picture'); // Get the picture URL from the data attribute
+        console.log(`Product ID: ${productId}`);
+        console.log(`Product Picture: ${productPicture}`);
+        fetchAndUpdateProductDetails(productId, productPicture);
         $(".product-card-modal").fadeIn();
         showSection(1);
     }
-
+    
     // Bind the click event for viewing product details
-    $(".product-pic").click(viewProduct);
+    $(".product-pic").click(function() {
+        const index = $(this).closest('.container').index();
+        console.log(`Product picture clicked, index: ${index}`);
+        viewProduct(index);
+    });
+
+
     $(".close-product-card").click(closeCard);
+
     // Close product card function
     function closeCard() {
         $(".product-card-modal").fadeOut();
     }
 
-// Show specific section of the product card
-function showSection(sectionNumber) {
-    $(".product-card-section").removeClass("active");
-    $("#section-" + sectionNumber).addClass("active");
+    $(".prev-product").click(function() {
+        if (currentProductIndex > 0) {
+            viewProduct(currentProductIndex - 1);
+        }
+    });
+    
+    $(".next-product").click(function() {
+        if (currentProductIndex < $('.product-pic').length - 1) {
+            viewProduct(currentProductIndex + 1);
+        }
+    });
 
-    // Hide/show buttons based on section
-    if (sectionNumber === 1) {
-        $(".next-section").show();
-        $(".previous-section").hide();
-    } else if (sectionNumber === 2) {
-        $(".next-section").hide();
-        $(".previous-section").show();
+    // Show specific section of the product card
+    function showSection(sectionNumber) {
+        $(".product-card-section").removeClass("active");
+        $("#section-" + sectionNumber).addClass("active");
+
+        if (sectionNumber === 1) {
+            $(".next-section").show();
+            $(".previous-section").hide();
+        } else if (sectionNumber === 2) {
+            $(".next-section").hide();
+            $(".previous-section").show();
+        }
     }
-}
 
-// Initialize buttons visibility on load
-$(document).ready(function() {
+    $(".next-section").click(function() {
+        showSection(2);
+    });
+
+    $(".previous-section").click(function() {
+        showSection(1);
+    });
+
+    // Initialize buttons visibility on load
     showSection(1); // Show the first section initially
 
     // Next and Back button functionality
@@ -281,8 +319,4 @@ $(document).ready(function() {
     $(".previous-section").click(function() {
         showSection(1);
     });
-});
-
-    
-
 });
